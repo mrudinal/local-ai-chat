@@ -156,7 +156,7 @@ export function ChatApp() {
                   className="group flex items-center gap-1 text-sm font-medium truncate max-w-[40vw] hover:text-primary transition-colors disabled:cursor-default disabled:hover:text-foreground"
                   title={activeConv ? "Rename conversation" : undefined}
                 >
-                  <span className="truncate">{activeConv?.title || "Chrome Local AI Chat"}</span>
+                  <span className="truncate">{activeConv?.title || "Gemma Local"}</span>
                   {activeConv && <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 shrink-0" />}
                 </button>
               )}
@@ -180,7 +180,7 @@ export function ChatApp() {
 
         {!apiAvailable && (
           <div className="border-b border-destructive/40 bg-destructive/10 text-destructive px-4 py-2 text-xs">
-            Chrome Built-in AI (LanguageModel) was not detected in this browser. Open Settings → "Check Chrome Local AI" for diagnostics.
+            Chrome Built-in AI (LanguageModel) was not detected in this browser. Open Settings → "Check Gemma Local" for diagnostics.
           </div>
         )}
         {chat.error && (
@@ -195,7 +195,7 @@ export function ChatApp() {
               <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4">
                 <Sparkles className="h-6 w-6" />
               </div>
-              <h1 className="text-2xl font-semibold tracking-tight">Chrome Local AI Chat</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">Gemma Local</h1>
               <p className="mt-2 text-sm text-muted-foreground max-w-md">
                 Runs with the LLM installed in your Chrome.
               </p>

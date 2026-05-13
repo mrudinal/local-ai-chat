@@ -73,7 +73,7 @@ export function SettingsDialog({
 
   const runCheck = async () => {
     setDiag("");
-    log("Checking Chrome Local AI…");
+    log("Checking Gemma Local…");
     const r = await checkChromeAIStatus();
     setAiStatus(r);
     log(`API detected: ${r.apiDetected ? "yes" : "no"}`);
@@ -221,7 +221,7 @@ export function SettingsDialog({
 
           <div className="rounded-md border border-border p-3 space-y-2">
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" onClick={runCheck}>Check Chrome Local AI</Button>
+              <Button size="sm" onClick={runCheck}>Check Gemma Local</Button>
               <Button
                 size="sm"
                 variant="destructive"
