@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Menu, Settings as SettingsIcon, Info, Sparkles, Save, Pencil, Check, X, Download } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
+import { getChromeAIRuntimeHint } from "@/services/chromeLocalAI";
 import { Sidebar } from "./Sidebar";
 import { MessageItem } from "./MessageItem";
 import { Composer } from "./Composer";
@@ -34,7 +35,10 @@ export function ChatApp() {
     el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [chat.messages]);
 
-  const apiAvailable = typeof (globalThis as any).LanguageModel !== "undefined";
+  const apiAvailable =
+    typeof (globalThis as any).LanguageModel !== "undefined" ||
+    typeof (globalThis as any).ai?.languageModel !== "undefined";
+  const runtimeHint = getChromeAIRuntimeHint();
 
   const startEditTitle = () => {
     if (!activeConv) return;
@@ -180,7 +184,12 @@ export function ChatApp() {
 
         {!apiAvailable && (
           <div className="border-b border-destructive/40 bg-destructive/10 text-destructive px-4 py-2 text-xs">
-            Chrome Built-in AI (LanguageModel) was not detected in this browser. Open Settings → "Check Chrome GPT" for diagnostics.
+            Chrome Built-in AI (LanguageModel) was not detected. {runtimeHint.secureContext ? "Open Settings → \"Check Chrome GPT\" for diagnostics." : "This origin is not secure. Use HTTPS or localhost."}
+            {runtimeHint.suggestedLocalhostUrl && (
+              <a href={runtimeHint.suggestedLocalhostUrl} className="ml-2 underline underline-offset-2 hover:opacity-80">
+                Open localhost
+              </a>
+            )}
           </div>
         )}
         {chat.error && (

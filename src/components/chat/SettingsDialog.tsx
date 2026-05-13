@@ -76,10 +76,15 @@ export function SettingsDialog({
     log("Checking Chrome GPT…");
     const r = await checkChromeAIStatus();
     setAiStatus(r);
+    log(`Origin: ${r.currentOrigin ?? "unknown"}`);
+    log(`Secure context: ${r.secureContext ? "yes" : "no"}`);
     log(`API detected: ${r.apiDetected ? "yes" : "no"}`);
     log(`Availability: ${r.availability}`);
     if (r.availability === "downloadable" || r.availability === "downloading") {
       log("Chrome may need to download or prepare Gemini Nano. Open chrome://on-device-internals to track progress.");
+    }
+    if (r.suggestedLocalhostUrl) {
+      log(`Try this trusted local URL: ${r.suggestedLocalhostUrl}`);
     }
     log(`Session creation test: ${r.sessionTest}`);
     if (r.testPromptResult) log(`Test prompt result: ${r.testPromptResult}`);

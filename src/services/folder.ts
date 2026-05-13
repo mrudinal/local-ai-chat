@@ -1,6 +1,45 @@
 import { db } from "./db";
 import type { Conversation, Message, ConversationSummary } from "@/types/chat";
 
+interface SavedChatDirMeta {
+  dirName: string;
+  firstSavedAt: number;
+}
+
+function sanitizeSegment(value: string) {
+  const cleaned = value
+    .trim()
+    .toLowerCase()
+    .split("")
+    .filter((ch) => {
+      const code = ch.charCodeAt(0);
+      if (code < 32 || code === 127) return false;
+      return !/[<>:"/\\|?*]/.test(ch);
+    })
+    .join("")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[.-]+|[.-]+$/g, "");
+  return (cleaned || "chat").slice(0, 60);
+}
+
+function formatFolderStamp(ms: number) {
+  return new Date(ms).toISOString().replace(/[:.]/g, "-");
+}
+
+async function getOrCreateChatDirMeta(conv: Conversation): Promise<SavedChatDirMeta> {
+  const key = `chatDirMeta:${conv.id}`;
+  const existing = await db.getKV<SavedChatDirMeta>(key);
+  if (existing?.dirName && typeof existing.firstSavedAt === "number") return existing;
+
+  const firstSavedAt = Date.now();
+  const titlePart = sanitizeSegment(conv.title || "chat");
+  const dirName = `${titlePart}__${formatFolderStamp(firstSavedAt)}`;
+  const created: SavedChatDirMeta = { dirName, firstSavedAt };
+  await db.putKV(key, created);
+  return created;
+}
+
 function hasFSAccess() {
   return typeof (window as any).showDirectoryPicker === "function";
 }
@@ -50,9 +89,14 @@ export async function saveCurrentChat(conv: Conversation, messages: Message[], s
   if (perm !== "granted") throw new Error("Folder permission not granted.");
   const root = await getOrCreateRoot(handle);
   const chatsDir = await root.getDirectoryHandle("chats", { create: true });
-  const convDir = await chatsDir.getDirectoryHandle(conv.id, { create: true });
+  const dirMeta = await getOrCreateChatDirMeta(conv);
+  const convDir = await chatsDir.getDirectoryHandle(dirMeta.dirName, { create: true });
 
-  await writeFile(convDir, "chat.json", JSON.stringify({ conversation: conv, messages, summary }, null, 2));
+  await writeFile(
+    convDir,
+    "chat.json",
+    JSON.stringify({ conversation: conv, messages, summary, saveMeta: { firstSavedAt: dirMeta.firstSavedAt } }, null, 2),
+  );
   await writeFile(convDir, "messages.json", JSON.stringify(messages, null, 2));
   await writeFile(convDir, "chat.md", chatToMarkdown(conv, messages));
   if (summary) await writeFile(convDir, "summary.json", JSON.stringify(summary, null, 2));

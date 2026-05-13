@@ -5,21 +5,63 @@ export interface AIStatus {
   availability: "available" | "downloadable" | "downloading" | "unavailable" | "unknown";
   sessionTest: "pending" | "success" | "error";
   testPromptResult?: string;
+  secureContext: boolean;
+  currentOrigin?: string;
+  suggestedLocalhostUrl?: string;
   error?: string;
 }
 
+function isPrivateIPv4(hostname: string): boolean {
+  if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname)) return false;
+  const parts = hostname.split(".").map(Number);
+  if (parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) return false;
+  return parts[0] === 10 ||
+    (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+    (parts[0] === 192 && parts[1] === 168) ||
+    (parts[0] === 127);
+}
+
+function resolveLocalhostUrl(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  if (window.location.protocol !== "http:") return undefined;
+  if (!isPrivateIPv4(window.location.hostname)) return undefined;
+  const target = new URL(window.location.href);
+  target.hostname = "localhost";
+  return target.toString();
+}
+
+export function getChromeAIRuntimeHint(): {
+  secureContext: boolean;
+  currentOrigin?: string;
+  suggestedLocalhostUrl?: string;
+} {
+  const secureContext = typeof window === "undefined" ? true : window.isSecureContext;
+  return {
+    secureContext,
+    currentOrigin: typeof window === "undefined" ? undefined : window.location.origin,
+    suggestedLocalhostUrl: !secureContext ? resolveLocalhostUrl() : undefined,
+  };
+}
+
 function getLM() {
-  return (globalThis as any).LanguageModel as typeof globalThis.LanguageModel;
+  const g = globalThis as any;
+  return (g.LanguageModel ?? g.ai?.languageModel) as typeof globalThis.LanguageModel;
 }
 
 export async function checkChromeAIStatus(): Promise<AIStatus> {
+  const runtime = getChromeAIRuntimeHint();
   const LM = getLM();
   if (!LM) {
     return {
       apiDetected: false,
       availability: "unknown",
       sessionTest: "error",
-      error: "globalThis.LanguageModel not found. Use Chrome with Built-in AI enabled.",
+      secureContext: runtime.secureContext,
+      currentOrigin: runtime.currentOrigin,
+      suggestedLocalhostUrl: runtime.suggestedLocalhostUrl,
+      error: runtime.secureContext
+        ? "globalThis.LanguageModel not found. Use Chrome with Built-in AI enabled."
+        : "Insecure origin: Chrome Built-in AI requires HTTPS or localhost.",
     };
   }
   let availability: AIStatus["availability"] = "unknown";
@@ -30,11 +72,22 @@ export async function checkChromeAIStatus(): Promise<AIStatus> {
       apiDetected: true,
       availability: "unknown",
       sessionTest: "error",
+      secureContext: runtime.secureContext,
+      currentOrigin: runtime.currentOrigin,
+      suggestedLocalhostUrl: runtime.suggestedLocalhostUrl,
       error: `availability() failed: ${e?.message ?? e}`,
     };
   }
   if (availability === "unavailable") {
-    return { apiDetected: true, availability, sessionTest: "error", error: "Model unavailable on this device." };
+    return {
+      apiDetected: true,
+      availability,
+      sessionTest: "error",
+      secureContext: runtime.secureContext,
+      currentOrigin: runtime.currentOrigin,
+      suggestedLocalhostUrl: runtime.suggestedLocalhostUrl,
+      error: "Model unavailable on this device.",
+    };
   }
   try {
     const session = await LM.create({
@@ -46,6 +99,9 @@ export async function checkChromeAIStatus(): Promise<AIStatus> {
       apiDetected: true,
       availability,
       sessionTest: "success",
+      secureContext: runtime.secureContext,
+      currentOrigin: runtime.currentOrigin,
+      suggestedLocalhostUrl: runtime.suggestedLocalhostUrl,
       testPromptResult: result,
     };
   } catch (e: any) {
@@ -53,6 +109,9 @@ export async function checkChromeAIStatus(): Promise<AIStatus> {
       apiDetected: true,
       availability,
       sessionTest: "error",
+      secureContext: runtime.secureContext,
+      currentOrigin: runtime.currentOrigin,
+      suggestedLocalhostUrl: runtime.suggestedLocalhostUrl,
       error: `create/prompt failed: ${e?.message ?? e}`,
     };
   }

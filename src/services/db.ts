@@ -91,6 +91,14 @@ export const db = {
     const d = await getDB();
     await d.put("kv", h, "folderHandle");
   },
+  async getKV<T = unknown>(key: string): Promise<T | undefined> {
+    const d = await getDB();
+    return (await d.get("kv", key)) as T | undefined;
+  },
+  async putKV<T = unknown>(key: string, value: T) {
+    const d = await getDB();
+    await d.put("kv", value, key);
+  },
   async clearAll() {
     const d = await getDB();
     for (const name of ["conversations", "messages", "summaries", "kv"]) {
