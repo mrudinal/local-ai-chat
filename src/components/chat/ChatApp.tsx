@@ -9,6 +9,7 @@ import {
   Check,
   X,
   Download,
+  Github,
 } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import { getChromeAIRuntimeHint } from "@/services/chromeLocalAI";
@@ -195,6 +196,18 @@ export function ChatApp() {
                     <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 shrink-0" />
                   )}
                 </button>
+              )}
+              {activeConv !== undefined && (
+                <a
+                  href="https://github.com/mrudinal/local-ai-chat"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                  title="View repository on GitHub"
+                >
+                  <Github className="h-4 w-4" />
+                  <span className="hidden sm:inline">GitHub</span>
+                </a>
               )}
             </div>
           </div>
