@@ -33,7 +33,7 @@ export function InstructionsDialog({ open, onOpenChange }: { open: boolean; onOp
           </p>
           <p>
             To verify everything is ready, open <code>chrome://on-device-internals</code> and use
-            Settings → Check Chrome Local AI. The chatbot will work when the model status is ready
+            Settings → Check Gemma Local. The chatbot will work when the model status is ready
             and the availability check returns <code>"available"</code>.
           </p>
         </div>

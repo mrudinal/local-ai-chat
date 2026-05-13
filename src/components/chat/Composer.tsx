@@ -40,7 +40,7 @@ export function Composer({ onSend, onStop, isStreaming }: Props) {
                 submit();
               }
             }}
-            placeholder="Message Chrome Local AI…  (Shift+Enter for new line)"
+            placeholder="Message Gemma Local…  (Shift+Enter for new line)"
             rows={1}
             className="flex-1 resize-none bg-transparent px-2 py-2 outline-none text-sm max-h-[200px]"
           />
