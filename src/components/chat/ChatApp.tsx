@@ -231,9 +231,6 @@ export function ChatApp() {
         onOpenChange={setSettingsOpen}
         settings={chat.settings}
         onSave={chat.updateSettings}
-        activeConversation={activeConv}
-        activeMessages={chat.messages}
-        activeSummary={chat.summary}
         onClearAll={async () => {
           await db.clearAll();
           location.reload();
