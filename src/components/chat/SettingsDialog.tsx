@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +54,27 @@ export function SettingsDialog({
   const [s, setS] = useState<AppSettings>(settings);
   const [diag, setDiag] = useState<string>("");
   const [aiStatus, setAiStatus] = useState<AIStatus | null>(null);
+  const [folderName, setFolderName] = useState<string | null>(null);
+  const [folderPerm, setFolderPerm] = useState<string | null>(null);
+
+  const refreshFolder = async () => {
+    const h = await db.getFolderHandle();
+    setFolderName(h?.name ?? null);
+    if (h) {
+      try {
+        const p = await (h as any).queryPermission({ mode: "readwrite" });
+        setFolderPerm(p);
+      } catch {
+        setFolderPerm(null);
+      }
+    } else {
+      setFolderPerm(null);
+    }
+  };
+
+  useEffect(() => {
+    if (open) refreshFolder();
+  }, [open]);
 
   const update = <K extends keyof AppSettings>(k: K, v: AppSettings[K]) =>
     setS((prev) => ({ ...prev, [k]: v }));
@@ -79,6 +100,7 @@ export function SettingsDialog({
     try {
       await chooseFolder();
       log("Folder selected and permission stored.");
+      await refreshFolder();
     } catch (e: any) {
       log(`Folder error: ${e?.message ?? e}`);
     }
@@ -88,6 +110,7 @@ export function SettingsDialog({
     try {
       const p = await verifyFolderPermission();
       log(`Folder permission: ${p}`);
+      await refreshFolder();
     } catch (e: any) {
       log(`Verify error: ${e?.message ?? e}`);
     }
@@ -228,6 +251,21 @@ export function SettingsDialog({
                 Export All Chats
               </Button>
             </div>
+            {folderName ? (
+              <div className="text-xs rounded border border-border bg-muted/40 px-2 py-1.5 flex items-center justify-between gap-2">
+                <span className="truncate">
+                  <span className="text-muted-foreground">Selected folder:</span>{" "}
+                  <span className="font-medium">{folderName}</span>
+                </span>
+                {folderPerm && (
+                  <span className={folderPerm === "granted" ? "text-primary" : "text-muted-foreground"}>
+                    {folderPerm}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">No folder selected yet.</p>
+            )}
           </div>
 
           <div className="rounded-md border border-border p-3 space-y-2">
