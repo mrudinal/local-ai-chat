@@ -96,3 +96,31 @@ export function downloadBlob(name: string, content: string, type: string) {
 }
 
 export { hasFSAccess };
+
+function chatToTxt(conv: Conversation, messages: Message[]) {
+  const lines: string[] = [
+    `=== ${conv.title} ===`,
+    `Created: ${new Date(conv.createdAt).toISOString()}`,
+    "",
+  ];
+  for (const m of messages) {
+    if (m.role === "system") continue;
+    const who = m.role === "user" ? "User" : "Assistant";
+    lines.push(`[${who}]`, m.content, "");
+  }
+  return lines.join("\n");
+}
+
+export async function exportAllChatsAsTxt(): Promise<number> {
+  const convs = await db.listConversations();
+  const parts: string[] = [];
+  for (const c of convs) {
+    const msgs = await db.getMessages(c.id);
+    parts.push(chatToTxt(c, msgs));
+    parts.push("\n----------------------------------------\n");
+  }
+  const content = parts.join("\n") || "No conversations.";
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  downloadBlob(`chrome-local-ai-chats-${stamp}.txt`, content, "text/plain");
+  return convs.length;
+}
