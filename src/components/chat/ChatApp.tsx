@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Menu, Settings as SettingsIcon, Info, Sparkles } from "lucide-react";
+import { Menu, Settings as SettingsIcon, Info, Sparkles, Save, Pencil, Check, X } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import { Sidebar } from "./Sidebar";
 import { MessageItem } from "./MessageItem";
@@ -7,7 +7,10 @@ import { Composer } from "./Composer";
 import { SettingsDialog } from "./SettingsDialog";
 import { InstructionsDialog } from "./InstructionsDialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { db } from "@/services/db";
+import { hasFSAccess, saveCurrentChat, downloadBlob, chatToMarkdown } from "@/services/folder";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export function ChatApp() {
@@ -15,6 +18,8 @@ export function ChatApp() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [instrOpen, setInstrOpen] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const activeConv = useMemo(
@@ -29,6 +34,42 @@ export function ChatApp() {
   }, [chat.messages]);
 
   const apiAvailable = typeof (globalThis as any).LanguageModel !== "undefined";
+
+  const startEditTitle = () => {
+    if (!activeConv) return;
+    setTitleDraft(activeConv.title);
+    setEditingTitle(true);
+  };
+  const commitTitle = () => {
+    if (activeConv && titleDraft.trim()) {
+      chat.renameConversation(activeConv.id, titleDraft.trim());
+    }
+    setEditingTitle(false);
+  };
+
+  const onSaveCurrentChat = async () => {
+    if (!activeConv) return;
+    try {
+      if (hasFSAccess() && (await db.getFolderHandle())) {
+        await saveCurrentChat(activeConv, chat.messages, chat.summary);
+        toast.success("Chat saved to selected folder.");
+      } else {
+        downloadBlob(
+          `${activeConv.title || "chat"}.json`,
+          JSON.stringify({ conversation: activeConv, messages: chat.messages, summary: chat.summary }, null, 2),
+          "application/json",
+        );
+        downloadBlob(
+          `${activeConv.title || "chat"}.md`,
+          chatToMarkdown(activeConv, chat.messages),
+          "text/markdown",
+        );
+        toast.success("Chat downloaded (no folder configured).");
+      }
+    } catch (e: any) {
+      toast.error(`Save error: ${e?.message ?? e}`);
+    }
+  };
 
   return (
     <div className="h-screen w-full flex bg-background text-foreground overflow-hidden">
@@ -79,12 +120,42 @@ export function ChatApp() {
             </Button>
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium truncate max-w-[40vw]">
-                {activeConv?.title || "Chrome Local AI Chat"}
-              </span>
+              {editingTitle && activeConv ? (
+                <div className="flex items-center gap-1">
+                  <Input
+                    autoFocus
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") commitTitle();
+                      if (e.key === "Escape") setEditingTitle(false);
+                    }}
+                    className="h-7 text-sm w-[40vw] max-w-xs"
+                  />
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={commitTitle}>
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTitle(false)}>
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  onClick={startEditTitle}
+                  disabled={!activeConv}
+                  className="group flex items-center gap-1 text-sm font-medium truncate max-w-[40vw] hover:text-primary transition-colors disabled:cursor-default disabled:hover:text-foreground"
+                  title={activeConv ? "Rename conversation" : undefined}
+                >
+                  <span className="truncate">{activeConv?.title || "Chrome Local AI Chat"}</span>
+                  {activeConv && <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 shrink-0" />}
+                </button>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={onSaveCurrentChat} disabled={!activeConv}>
+              <Save className="h-4 w-4 mr-1" /> Save
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => setInstrOpen(true)}>
               <Info className="h-4 w-4 mr-1" /> Instructions
             </Button>
