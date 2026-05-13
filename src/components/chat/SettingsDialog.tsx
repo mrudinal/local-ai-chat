@@ -21,12 +21,8 @@ import type { AppSettings, Conversation, Message, ConversationSummary } from "@/
 import { checkChromeAIStatus, type AIStatus } from "@/services/chromeLocalAI";
 import {
   chooseFolder,
-  exportAllChats,
   hasFSAccess,
-  saveCurrentChat,
   verifyFolderPermission,
-  downloadBlob,
-  chatToMarkdown,
 } from "@/services/folder";
 import { db } from "@/services/db";
 
@@ -35,9 +31,6 @@ interface Props {
   onOpenChange: (o: boolean) => void;
   settings: AppSettings;
   onSave: (s: AppSettings) => void;
-  activeConversation?: Conversation | null;
-  activeMessages: Message[];
-  activeSummary?: ConversationSummary;
   onClearAll: () => void;
 }
 
@@ -46,9 +39,6 @@ export function SettingsDialog({
   onOpenChange,
   settings,
   onSave,
-  activeConversation,
-  activeMessages,
-  activeSummary,
   onClearAll,
 }: Props) {
   const [s, setS] = useState<AppSettings>(settings);
@@ -113,39 +103,6 @@ export function SettingsDialog({
       await refreshFolder();
     } catch (e: any) {
       log(`Verify error: ${e?.message ?? e}`);
-    }
-  };
-
-  const onSaveChat = async () => {
-    if (!activeConversation) return log("No active chat.");
-    try {
-      if (hasFSAccess() && (await db.getFolderHandle())) {
-        await saveCurrentChat(activeConversation, activeMessages, activeSummary);
-        log("Chat saved to selected folder.");
-      } else {
-        downloadBlob(
-          `${activeConversation.title || "chat"}.json`,
-          JSON.stringify({ conversation: activeConversation, messages: activeMessages, summary: activeSummary }, null, 2),
-          "application/json",
-        );
-        downloadBlob(
-          `${activeConversation.title || "chat"}.md`,
-          chatToMarkdown(activeConversation, activeMessages),
-          "text/markdown",
-        );
-        log("Saved as downloads (no folder configured).");
-      }
-    } catch (e: any) {
-      log(`Save error: ${e?.message ?? e}`);
-    }
-  };
-
-  const onExportAll = async () => {
-    try {
-      const r = await exportAllChats();
-      log(`Exported ${r.count} chats (${r.mode}).`);
-    } catch (e: any) {
-      log(`Export error: ${e?.message ?? e}`);
     }
   };
 
@@ -243,12 +200,6 @@ export function SettingsDialog({
               </Button>
               <Button size="sm" variant="secondary" onClick={onVerify} disabled={!hasFSAccess()}>
                 Verify Folder Permission
-              </Button>
-              <Button size="sm" variant="secondary" onClick={onSaveChat}>
-                Save Current Chat Now
-              </Button>
-              <Button size="sm" variant="secondary" onClick={onExportAll}>
-                Export All Chats
               </Button>
             </div>
             {folderName ? (
