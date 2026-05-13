@@ -13,23 +13,30 @@ export function InstructionsDialog({ open, onOpenChange }: { open: boolean; onOp
         <DialogHeader>
           <DialogTitle>How this chatbot works</DialogTitle>
           <DialogDescription>
-            A 100% local ChatGPT-style chat that runs entirely in your browser.
+            Local ChatGPT-style chat powered by Chrome Built-in AI.
           </DialogDescription>
         </DialogHeader>
-        <ul className="space-y-2 text-sm text-foreground/90 list-disc pl-5">
-          <li>Uses Chrome Built-in AI (Gemini Nano) via the global <code>LanguageModel</code> API.</li>
-          <li>Runs locally — no API key, no backend, no cloud LLM.</li>
-          <li>Chat history is stored in your browser via IndexedDB.</li>
-          <li>Optionally choose a folder in Settings to save chats as JSON & Markdown.</li>
-          <li>
-            Verify the local model at <code>chrome://on-device-internals</code>.
-          </li>
-          <li>
-            Update Chrome at <code>chrome://settings/help</code>.
-          </li>
-          <li>If the model is downloading, wait a moment and retry.</li>
-          <li>If unavailable on your device, generation cannot run.</li>
-        </ul>
+        <div className="space-y-3 text-sm text-foreground/90 leading-relaxed">
+          <p>
+            This is a 100% local ChatGPT-style chatbot that runs entirely in your browser using
+            Chrome Built-in AI (Gemini Nano) through the <code>LanguageModel</code> API. No API key,
+            backend, or cloud AI is used.
+          </p>
+          <p>
+            To enable it, update Chrome at <code>chrome://settings/help</code>, enable the required
+            Chrome AI flags if prompted, and restart Chrome. The first time you use the app, Chrome
+            may download and prepare the local model automatically.
+          </p>
+          <p>
+            When selecting a Projects Folder in Settings, grant read and write permission so the app
+            can save chats and exports to that folder.
+          </p>
+          <p>
+            To verify everything is ready, open <code>chrome://on-device-internals</code> and use
+            Settings → Check Chrome Local AI. The chatbot will work when the model status is ready
+            and the availability check returns <code>"available"</code>.
+          </p>
+        </div>
       </DialogContent>
     </Dialog>
   );
