@@ -1,0 +1,174 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Menu, Settings as SettingsIcon, Info, Sparkles } from "lucide-react";
+import { useChat } from "@/hooks/useChat";
+import { Sidebar } from "./Sidebar";
+import { MessageItem } from "./MessageItem";
+import { Composer } from "./Composer";
+import { SettingsDialog } from "./SettingsDialog";
+import { InstructionsDialog } from "./InstructionsDialog";
+import { Button } from "@/components/ui/button";
+import { db } from "@/services/db";
+import { cn } from "@/lib/utils";
+
+export function ChatApp() {
+  const chat = useChat();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [instrOpen, setInstrOpen] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const activeConv = useMemo(
+    () => chat.conversations.find((c) => c.id === chat.activeId) ?? null,
+    [chat.conversations, chat.activeId],
+  );
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+  }, [chat.messages]);
+
+  const apiAvailable = typeof (globalThis as any).LanguageModel !== "undefined";
+
+  return (
+    <div className="h-screen w-full flex bg-background text-foreground overflow-hidden">
+      {/* Sidebar - desktop */}
+      <div className="hidden md:flex h-full">
+        <Sidebar
+          conversations={chat.conversations}
+          activeId={chat.activeId}
+          onSelect={chat.setActiveId}
+          onNew={() => chat.newChat()}
+          onRename={chat.renameConversation}
+          onDelete={chat.deleteConversation}
+        />
+      </div>
+      {/* Sidebar - mobile drawer */}
+      <div
+        className={cn(
+          "fixed inset-0 z-40 md:hidden transition-opacity",
+          sidebarOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none",
+        )}
+        onClick={() => setSidebarOpen(false)}
+      >
+        <div className="absolute inset-0 bg-background/60 backdrop-blur-sm" />
+        <div
+          className={cn(
+            "absolute left-0 top-0 h-full transition-transform",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          )}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Sidebar
+            conversations={chat.conversations}
+            activeId={chat.activeId}
+            onSelect={(id) => { chat.setActiveId(id); setSidebarOpen(false); }}
+            onNew={() => { chat.newChat(); setSidebarOpen(false); }}
+            onRename={chat.renameConversation}
+            onDelete={chat.deleteConversation}
+            onClose={() => setSidebarOpen(false)}
+          />
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="flex items-center justify-between border-b border-border px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(true)}>
+              <Menu className="h-4 w-4" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium truncate max-w-[40vw]">
+                {activeConv?.title || "Chrome Local AI Chat"}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={() => setInstrOpen(true)}>
+              <Info className="h-4 w-4 mr-1" /> Instructions
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setSettingsOpen(true)}>
+              <SettingsIcon className="h-4 w-4 mr-1" /> Settings
+            </Button>
+          </div>
+        </header>
+
+        {!apiAvailable && (
+          <div className="border-b border-destructive/40 bg-destructive/10 text-destructive px-4 py-2 text-xs">
+            Chrome Built-in AI (LanguageModel) was not detected in this browser. Open Settings → "Check Chrome Local AI" for diagnostics.
+          </div>
+        )}
+        {chat.error && (
+          <div className="border-b border-destructive/40 bg-destructive/10 text-destructive px-4 py-2 text-xs">
+            {chat.error}
+          </div>
+        )}
+
+        <div ref={scrollRef} className="flex-1 overflow-y-auto">
+          {chat.messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center px-6 text-center">
+              <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <h1 className="text-2xl font-semibold tracking-tight">Chrome Local AI Chat</h1>
+              <p className="mt-2 text-sm text-muted-foreground max-w-md">
+                Runs with the LLM installed in your Chrome.
+              </p>
+              <div className="mt-6 grid sm:grid-cols-2 gap-2 max-w-xl w-full">
+                {[
+                  "Explain quantum entanglement simply",
+                  "Write a haiku about the ocean",
+                  "Give me 5 productivity tips",
+                  "Translate 'Hello, world' to Spanish",
+                ].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => chat.sendUserMessage(s)}
+                    className="text-left text-sm rounded-lg border border-border bg-card hover:bg-accent px-3 py-2 transition-colors"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div>
+              {chat.messages.map((m, i) => (
+                <MessageItem
+                  key={m.id}
+                  message={m}
+                  isLast={i === chat.messages.length - 1}
+                  isStreaming={chat.isStreaming && i === chat.messages.length - 1 && m.role === "assistant"}
+                  onEdit={chat.editUserMessage}
+                  onRegenerate={chat.regenerateLast}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Composer
+          onSend={chat.sendUserMessage}
+          onStop={chat.stop}
+          isStreaming={chat.isStreaming}
+        />
+      </div>
+
+      <SettingsDialog
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+        settings={chat.settings}
+        onSave={chat.updateSettings}
+        activeConversation={activeConv}
+        activeMessages={chat.messages}
+        activeSummary={chat.summary}
+        onClearAll={async () => {
+          await db.clearAll();
+          location.reload();
+        }}
+      />
+      <InstructionsDialog open={instrOpen} onOpenChange={setInstrOpen} />
+    </div>
+  );
+}
