@@ -1,15 +1,6 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-const CHROME_URLS = [
-  "chrome://settings/help",
-  "chrome://flags/",
-  "chrome://on-device-internals/",
-];
+const CHROME_URLS = ["chrome://settings/help", "chrome://flags/", "chrome://on-device-internals/"];
 
 function renderLine(text: string) {
   const pattern = new RegExp(
@@ -58,7 +49,7 @@ export function InstructionsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>How Chrome GPT works</DialogTitle>
+          <DialogTitle>How Chrome GPT Local Chat works</DialogTitle>
         </DialogHeader>
         <ul className="text-sm leading-6 space-y-2 list-disc pl-5">
           {LINES.map((line, i) => (

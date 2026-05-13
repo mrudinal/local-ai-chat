@@ -15,7 +15,15 @@ interface Props {
   onClose?: () => void;
 }
 
-export function Sidebar({ conversations, activeId, onSelect, onNew, onRename, onDelete, onClose }: Props) {
+export function Sidebar({
+  conversations,
+  activeId,
+  onSelect,
+  onNew,
+  onRename,
+  onDelete,
+  onClose,
+}: Props) {
   const [q, setQ] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -62,7 +70,9 @@ export function Sidebar({ conversations, activeId, onSelect, onNew, onRename, on
                 key={c.id}
                 className={cn(
                   "group flex items-center gap-1 rounded-md px-2 py-1.5 text-sm cursor-pointer",
-                  active ? "bg-sidebar-accent text-sidebar-accent-foreground" : "hover:bg-sidebar-accent/60",
+                  active
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "hover:bg-sidebar-accent/60",
                 )}
                 onClick={() => !isEditing && onSelect(c.id)}
               >

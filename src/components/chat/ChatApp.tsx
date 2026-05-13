@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Menu, Settings as SettingsIcon, Info, Sparkles, Save, Pencil, Check, X, Download } from "lucide-react";
+import {
+  Menu,
+  Settings as SettingsIcon,
+  Info,
+  Sparkles,
+  Save,
+  Pencil,
+  Check,
+  X,
+  Download,
+} from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import { getChromeAIRuntimeHint } from "@/services/chromeLocalAI";
 import { Sidebar } from "./Sidebar";
@@ -61,7 +71,11 @@ export function ChatApp() {
       } else {
         downloadBlob(
           `${activeConv.title || "chat"}.json`,
-          JSON.stringify({ conversation: activeConv, messages: chat.messages, summary: chat.summary }, null, 2),
+          JSON.stringify(
+            { conversation: activeConv, messages: chat.messages, summary: chat.summary },
+            null,
+            2,
+          ),
           "application/json",
         );
         downloadBlob(
@@ -117,8 +131,14 @@ export function ChatApp() {
           <Sidebar
             conversations={chat.conversations}
             activeId={chat.activeId}
-            onSelect={(id) => { chat.setActiveId(id); setSidebarOpen(false); }}
-            onNew={() => { chat.newChat(); setSidebarOpen(false); }}
+            onSelect={(id) => {
+              chat.setActiveId(id);
+              setSidebarOpen(false);
+            }}
+            onNew={() => {
+              chat.newChat();
+              setSidebarOpen(false);
+            }}
             onRename={chat.renameConversation}
             onDelete={chat.deleteConversation}
             onClose={() => setSidebarOpen(false)}
@@ -129,7 +149,12 @@ export function ChatApp() {
       <div className="flex-1 flex flex-col min-w-0">
         <header className="flex items-center justify-between border-b border-border px-3 py-2">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(true)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setSidebarOpen(true)}
+            >
               <Menu className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-2">
@@ -149,7 +174,12 @@ export function ChatApp() {
                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={commitTitle}>
                     <Check className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingTitle(false)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setEditingTitle(false)}
+                  >
                     <X className="h-3.5 w-3.5" />
                   </Button>
                 </div>
@@ -160,8 +190,10 @@ export function ChatApp() {
                   className="group flex items-center gap-1 text-sm font-medium truncate max-w-[40vw] hover:text-primary transition-colors disabled:cursor-default disabled:hover:text-foreground"
                   title={activeConv ? "Rename conversation" : undefined}
                 >
-                  <span className="truncate">{activeConv?.title || "Chrome GPT"}</span>
-                  {activeConv && <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 shrink-0" />}
+                  <span className="truncate">{activeConv?.title || "Chrome GPT Local Chat"}</span>
+                  {activeConv && (
+                    <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 shrink-0" />
+                  )}
                 </button>
               )}
             </div>
@@ -184,9 +216,15 @@ export function ChatApp() {
 
         {!apiAvailable && (
           <div className="border-b border-destructive/40 bg-destructive/10 text-destructive px-4 py-2 text-xs">
-            Chrome Built-in AI (LanguageModel) was not detected. {runtimeHint.secureContext ? "Open Settings → \"Check Chrome GPT\" for diagnostics." : "This origin is not secure. Use HTTPS or localhost."}
+            Chrome Built-in AI (LanguageModel) was not detected.{" "}
+            {runtimeHint.secureContext
+              ? 'Open Settings → "Check Chrome GPT" for diagnostics.'
+              : "This origin is not secure. Use HTTPS or localhost."}
             {runtimeHint.suggestedLocalhostUrl && (
-              <a href={runtimeHint.suggestedLocalhostUrl} className="ml-2 underline underline-offset-2 hover:opacity-80">
+              <a
+                href={runtimeHint.suggestedLocalhostUrl}
+                className="ml-2 underline underline-offset-2 hover:opacity-80"
+              >
                 Open localhost
               </a>
             )}
@@ -204,7 +242,7 @@ export function ChatApp() {
               <div className="h-12 w-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4">
                 <Sparkles className="h-6 w-6" />
               </div>
-              <h1 className="text-2xl font-semibold tracking-tight">Chrome GPT</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">Chrome GPT Local Chat</h1>
               <p className="mt-2 text-sm text-muted-foreground max-w-md">
                 Runs with the LLM installed in your Chrome.
               </p>
@@ -232,7 +270,9 @@ export function ChatApp() {
                   key={m.id}
                   message={m}
                   isLast={i === chat.messages.length - 1}
-                  isStreaming={chat.isStreaming && i === chat.messages.length - 1 && m.role === "assistant"}
+                  isStreaming={
+                    chat.isStreaming && i === chat.messages.length - 1 && m.role === "assistant"
+                  }
                   onEdit={chat.editUserMessage}
                   onRegenerate={chat.regenerateLast}
                 />
@@ -241,11 +281,7 @@ export function ChatApp() {
           )}
         </div>
 
-        <Composer
-          onSend={chat.sendUserMessage}
-          onStop={chat.stop}
-          isStreaming={chat.isStreaming}
-        />
+        <Composer onSend={chat.sendUserMessage} onStop={chat.stop} isStreaming={chat.isStreaming} />
       </div>
 
       <SettingsDialog

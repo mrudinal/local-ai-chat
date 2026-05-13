@@ -27,7 +27,7 @@ export function Composer({ onSend, onStop, isStreaming }: Props) {
   };
 
   return (
-    <div className="border-t border-border bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-4">
+    <div className="border-t border-border bg-background/80 p-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto max-w-3xl">
         <div className="flex items-end gap-2 rounded-2xl border border-border bg-card p-2 shadow-sm">
           <textarea
@@ -40,9 +40,9 @@ export function Composer({ onSend, onStop, isStreaming }: Props) {
                 submit();
               }
             }}
-            placeholder="Message Chrome GPT…  (Shift+Enter for new line)"
+            placeholder="Message Chrome GPT Local Chat... (Shift+Enter for new line)"
             rows={1}
-            className="flex-1 resize-none bg-transparent px-2 py-2 outline-none text-sm max-h-[200px]"
+            className="max-h-[200px] flex-1 resize-none bg-transparent px-2 py-2 text-sm outline-none"
           />
           {isStreaming ? (
             <Button size="icon" variant="destructive" onClick={onStop} title="Stop">
@@ -55,7 +55,7 @@ export function Composer({ onSend, onStop, isStreaming }: Props) {
           )}
         </div>
         <p className="mt-2 text-center text-[11px] text-muted-foreground">
-          Runs locally in Chrome via Built-in AI · No backend · No API key
+          Runs locally in Chrome via Built-in AI | No backend | No API key
         </p>
       </div>
     </div>

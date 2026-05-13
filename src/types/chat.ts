@@ -6,7 +6,7 @@ export interface Message {
   role: Role;
   content: string;
   createdAt: number;
-  status: "complete" | "streaming" | "error";
+  status: "complete" | "streaming" | "partial" | "error";
 }
 
 export interface Conversation {
@@ -55,17 +55,23 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 // Chrome Built-in AI types (loose)
 declare global {
-  // eslint-disable-next-line no-var
-  var LanguageModel: {
-    availability: (opts?: any) => Promise<"available" | "downloadable" | "downloading" | "unavailable">;
-    create: (opts?: any) => Promise<LanguageModelSession>;
-    params?: () => Promise<any>;
-  } | undefined;
+  var LanguageModel:
+    | {
+        availability: (
+          opts?: any,
+        ) => Promise<"available" | "downloadable" | "downloading" | "unavailable">;
+        create: (opts?: any) => Promise<LanguageModelSession>;
+        params?: () => Promise<any>;
+      }
+    | undefined;
 }
 
 export interface LanguageModelSession {
   prompt: (input: string | any, opts?: any) => Promise<string>;
-  promptStreaming: (input: string | any, opts?: any) => AsyncIterable<string> | ReadableStream<string>;
+  promptStreaming: (
+    input: string | any,
+    opts?: any,
+  ) => AsyncIterable<string> | ReadableStream<string>;
   destroy: () => void;
   clone?: () => Promise<LanguageModelSession>;
 }

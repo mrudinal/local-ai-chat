@@ -51,7 +51,9 @@ export async function chooseFolder(): Promise<FileSystemDirectoryHandle> {
   return handle;
 }
 
-export async function verifyFolderPermission(): Promise<"granted" | "prompt" | "denied" | "no-handle"> {
+export async function verifyFolderPermission(): Promise<
+  "granted" | "prompt" | "denied" | "no-handle"
+> {
   const h = await db.getFolderHandle();
   if (!h) return "no-handle";
   const anyH = h as any;
@@ -74,7 +76,12 @@ async function writeFile(dir: FileSystemDirectoryHandle, name: string, contents:
 }
 
 export function chatToMarkdown(conv: Conversation, messages: Message[]) {
-  const lines: string[] = [`# ${conv.title}`, "", `_Created: ${new Date(conv.createdAt).toISOString()}_`, ""];
+  const lines: string[] = [
+    `# ${conv.title}`,
+    "",
+    `_Created: ${new Date(conv.createdAt).toISOString()}_`,
+    "",
+  ];
   for (const m of messages) {
     if (m.role === "system") continue;
     lines.push(`## ${m.role === "user" ? "User" : "Assistant"}`, "", m.content, "");
@@ -82,7 +89,11 @@ export function chatToMarkdown(conv: Conversation, messages: Message[]) {
   return lines.join("\n");
 }
 
-export async function saveCurrentChat(conv: Conversation, messages: Message[], summary?: ConversationSummary) {
+export async function saveCurrentChat(
+  conv: Conversation,
+  messages: Message[],
+  summary?: ConversationSummary,
+) {
   const handle = await db.getFolderHandle();
   if (!handle) throw new Error("No folder selected.");
   const perm = await verifyFolderPermission();
@@ -95,7 +106,11 @@ export async function saveCurrentChat(conv: Conversation, messages: Message[], s
   await writeFile(
     convDir,
     "chat.json",
-    JSON.stringify({ conversation: conv, messages, summary, saveMeta: { firstSavedAt: dirMeta.firstSavedAt } }, null, 2),
+    JSON.stringify(
+      { conversation: conv, messages, summary, saveMeta: { firstSavedAt: dirMeta.firstSavedAt } },
+      null,
+      2,
+    ),
   );
   await writeFile(convDir, "messages.json", JSON.stringify(messages, null, 2));
   await writeFile(convDir, "chat.md", chatToMarkdown(conv, messages));

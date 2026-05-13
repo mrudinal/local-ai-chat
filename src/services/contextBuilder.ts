@@ -10,14 +10,14 @@ export function buildPrompt(
   if (summary && settings.contextStrategy !== "recent") {
     parts.push("=== Conversation summary ===");
     if (summary.summary) parts.push(summary.summary);
-    if (summary.importantFacts?.length) parts.push("Important facts:\n- " + summary.importantFacts.join("\n- "));
+    if (summary.importantFacts?.length)
+      parts.push("Important facts:\n- " + summary.importantFacts.join("\n- "));
     if (summary.openTasks?.length) parts.push("Open tasks:\n- " + summary.openTasks.join("\n- "));
-    if (summary.userPreferences?.length) parts.push("User preferences:\n- " + summary.userPreferences.join("\n- "));
+    if (summary.userPreferences?.length)
+      parts.push("User preferences:\n- " + summary.userPreferences.join("\n- "));
   }
   const recent =
-    settings.contextStrategy === "full"
-      ? messages
-      : messages.slice(-settings.maxRecentMessages);
+    settings.contextStrategy === "full" ? messages : messages.slice(-settings.maxRecentMessages);
   if (recent.length) {
     parts.push("=== Recent messages ===");
     for (const m of recent) {
@@ -30,9 +30,5 @@ export function buildPrompt(
 }
 
 export function shouldSummarize(settings: AppSettings, messageCount: number) {
-  return (
-    settings.autoSummary &&
-    messageCount > 0 &&
-    messageCount % settings.summaryInterval === 0
-  );
+  return settings.autoSummary && messageCount > 0 && messageCount % settings.summaryInterval === 0;
 }

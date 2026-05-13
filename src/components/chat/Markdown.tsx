@@ -48,7 +48,9 @@ export function Markdown({ content }: { content: string }) {
             return <CodeBlock className={className}>{value}</CodeBlock>;
           },
           a(props) {
-            return <a {...props} target="_blank" rel="noreferrer" className="text-primary underline" />;
+            return (
+              <a {...props} target="_blank" rel="noreferrer" className="text-primary underline" />
+            );
           },
         }}
       >

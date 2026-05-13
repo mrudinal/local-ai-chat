@@ -15,10 +15,12 @@ function isPrivateIPv4(hostname: string): boolean {
   if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(hostname)) return false;
   const parts = hostname.split(".").map(Number);
   if (parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) return false;
-  return parts[0] === 10 ||
+  return (
+    parts[0] === 10 ||
     (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
     (parts[0] === 192 && parts[1] === 168) ||
-    (parts[0] === 127);
+    parts[0] === 127
+  );
 }
 
 function resolveLocalhostUrl(): string | undefined {
@@ -117,7 +119,9 @@ export async function checkChromeAIStatus(): Promise<AIStatus> {
   }
 }
 
-export async function createChatSession(opts: { systemPrompt?: string; languages?: string[] } = {}): Promise<LanguageModelSession> {
+export async function createChatSession(
+  opts: { systemPrompt?: string; languages?: string[] } = {},
+): Promise<LanguageModelSession> {
   const LM = getLM();
   if (!LM) throw new Error("Chrome Built-in AI (LanguageModel) is not available in this browser.");
   const av = await LM.availability();
@@ -155,7 +159,11 @@ export async function* streamMessage(
     const reader = (anyStream as ReadableStream<string>).getReader();
     while (true) {
       if (signal?.aborted) {
-        try { reader.cancel(); } catch {}
+        try {
+          reader.cancel();
+        } catch {
+          // Ignore reader cancellation errors during abort cleanup.
+        }
         return;
       }
       const { value, done } = await reader.read();
@@ -172,8 +180,7 @@ export async function summarizeConversation(text: string): Promise<{
   userPreferences: string[];
 }> {
   const session = await createChatSession({
-    systemPrompt:
-      "You produce concise structured JSON summaries for chat history.",
+    systemPrompt: "You produce concise structured JSON summaries for chat history.",
   });
   try {
     const prompt = `Summarize the older part of this conversation for future context. Keep user goals, decisions, technical details, project names, unresolved tasks, preferences, code/config details, and anything needed to continue the conversation. Remove repetition and small talk. Return ONLY valid JSON with keys: summary (string), importantFacts (string[]), openTasks (string[]), userPreferences (string[]).
@@ -182,14 +189,19 @@ CONVERSATION:
 ${text}`;
     const raw = await session.prompt(prompt);
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return { summary: raw.slice(0, 500), importantFacts: [], openTasks: [], userPreferences: [] };
+    if (!jsonMatch)
+      return { summary: raw.slice(0, 500), importantFacts: [], openTasks: [], userPreferences: [] };
     try {
       const parsed = JSON.parse(jsonMatch[0]);
       return {
         summary: String(parsed.summary ?? ""),
-        importantFacts: Array.isArray(parsed.importantFacts) ? parsed.importantFacts.map(String) : [],
+        importantFacts: Array.isArray(parsed.importantFacts)
+          ? parsed.importantFacts.map(String)
+          : [],
         openTasks: Array.isArray(parsed.openTasks) ? parsed.openTasks.map(String) : [],
-        userPreferences: Array.isArray(parsed.userPreferences) ? parsed.userPreferences.map(String) : [],
+        userPreferences: Array.isArray(parsed.userPreferences)
+          ? parsed.userPreferences.map(String)
+          : [],
       };
     } catch {
       return { summary: raw.slice(0, 500), importantFacts: [], openTasks: [], userPreferences: [] };
@@ -207,7 +219,13 @@ export async function generateConversationTitle(firstUserMessage: string): Promi
     const t = await session.prompt(
       `Generate a short conversation title, max 6 words, no quotes. Topic: ${firstUserMessage}`,
     );
-    return t.replace(/^["'`]+|["'`]+$/g, "").split("\n")[0].trim().slice(0, 80) || "New chat";
+    return (
+      t
+        .replace(/^["'`]+|["'`]+$/g, "")
+        .split("\n")[0]
+        .trim()
+        .slice(0, 80) || "New chat"
+    );
   } catch {
     return firstUserMessage.slice(0, 40);
   } finally {
@@ -218,5 +236,7 @@ export async function generateConversationTitle(firstUserMessage: string): Promi
 export function destroySession(session: LanguageModelSession | null | undefined) {
   try {
     session?.destroy();
-  } catch {}
+  } catch {
+    // Ignore destroy failures; this is cleanup for a best-effort local session.
+  }
 }

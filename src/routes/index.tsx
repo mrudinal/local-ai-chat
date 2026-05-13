@@ -5,8 +5,12 @@ export const Route = createFileRoute("/")({
   component: Index,
   head: () => ({
     meta: [
-      { title: "Chrome GPT" },
-      { name: "description", content: "ChatGPT-style chatbot running 100% locally in Chrome via the Built-in AI Prompt API. No backend, no API key." },
+      { title: "Chrome GPT Local Chat" },
+      {
+        name: "description",
+        content:
+          "Frontend-only ChatGPT-style chatbot running locally in Chrome through the Built-in AI LanguageModel API.",
+      },
     ],
   }),
 });

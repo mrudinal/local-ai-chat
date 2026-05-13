@@ -112,139 +112,165 @@ export function useChat() {
     return conv;
   }, [settings.systemPrompt, settings.language, refreshConversations]);
 
-  const renameConversation = useCallback(async (id: string, title: string) => {
-    const c = await db.getConversation(id);
-    if (!c) return;
-    c.title = title || "Untitled";
-    c.updatedAt = Date.now();
-    await db.putConversation(c);
-    await refreshConversations();
-  }, [refreshConversations]);
+  const renameConversation = useCallback(
+    async (id: string, title: string) => {
+      const c = await db.getConversation(id);
+      if (!c) return;
+      c.title = title || "Untitled";
+      c.updatedAt = Date.now();
+      await db.putConversation(c);
+      await refreshConversations();
+    },
+    [refreshConversations],
+  );
 
-  const deleteConversation = useCallback(async (id: string) => {
-    await db.deleteConversation(id);
-    if (activeId === id) {
-      setActiveId(null);
-    }
-    await refreshConversations();
-  }, [activeId, refreshConversations]);
+  const deleteConversation = useCallback(
+    async (id: string) => {
+      await db.deleteConversation(id);
+      if (activeId === id) {
+        setActiveId(null);
+      }
+      await refreshConversations();
+    },
+    [activeId, refreshConversations],
+  );
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
-    setIsStreaming(false);
   }, []);
 
-  const ensureSession = useCallback(async (conv: Conversation) => {
-    if (sessionRef.current && sessionConvRef.current === conv.id) return sessionRef.current;
-    destroySession(sessionRef.current);
-    const s = await createChatSession({
-      systemPrompt: conv.systemPrompt || settings.systemPrompt,
-      languages: settings.language === "auto" ? ["es", "en"] : [settings.language],
-    });
-    sessionRef.current = s;
-    sessionConvRef.current = conv.id;
-    return s;
-  }, [settings.systemPrompt, settings.language]);
+  const ensureSession = useCallback(
+    async (conv: Conversation) => {
+      if (sessionRef.current && sessionConvRef.current === conv.id) return sessionRef.current;
+      destroySession(sessionRef.current);
+      const s = await createChatSession({
+        systemPrompt: conv.systemPrompt || settings.systemPrompt,
+        languages: settings.language === "auto" ? ["es", "en"] : [settings.language],
+      });
+      sessionRef.current = s;
+      sessionConvRef.current = conv.id;
+      return s;
+    },
+    [settings.systemPrompt, settings.language],
+  );
 
-  const sendUserMessage = useCallback(async (text: string) => {
-    if (!text.trim()) return;
-    setError(null);
-    let conv: Conversation | undefined;
-    if (!activeId) {
-      conv = await newChat();
-    } else {
-      conv = await db.getConversation(activeId);
-    }
-    if (!conv) return;
-
-    const userMsg: Message = {
-      id: uid(),
-      conversationId: conv.id,
-      role: "user",
-      content: text,
-      createdAt: Date.now(),
-      status: "complete",
-    };
-    await db.putMessage(userMsg);
-    setMessages((m) => [...m, userMsg]);
-
-    const assistantMsg: Message = {
-      id: uid(),
-      conversationId: conv.id,
-      role: "assistant",
-      content: "",
-      createdAt: Date.now() + 1,
-      status: "streaming",
-    };
-    await db.putMessage(assistantMsg);
-    setMessages((m) => [...m, assistantMsg]);
-
-    const allMsgs = await db.getMessages(conv.id);
-    const sum = await db.getSummary(conv.id);
-    const prompt = buildPrompt(settings, allMsgs.slice(0, -1), sum, text);
-
-    setIsStreaming(true);
-    abortRef.current = new AbortController();
-    let acc = "";
-    try {
-      const session = await ensureSession(conv);
-      for await (const chunk of streamMessage(session, prompt, abortRef.current.signal)) {
-        acc += chunk;
-        setMessages((m) =>
-          m.map((x) => (x.id === assistantMsg.id ? { ...x, content: acc } : x)),
-        );
+  const sendUserMessage = useCallback(
+    async (text: string) => {
+      if (!text.trim()) return;
+      setError(null);
+      let conv: Conversation | undefined;
+      if (!activeId) {
+        conv = await newChat();
+      } else {
+        conv = await db.getConversation(activeId);
       }
-      assistantMsg.content = acc;
-      assistantMsg.status = "complete";
-      await db.putMessage(assistantMsg);
-    } catch (e: any) {
-      assistantMsg.content = acc || `Error: ${e?.message ?? e}`;
-      assistantMsg.status = "error";
-      await db.putMessage(assistantMsg);
-      setMessages((m) =>
-        m.map((x) => (x.id === assistantMsg.id ? { ...assistantMsg } : x)),
-      );
-      setError(e?.message ?? String(e));
-    } finally {
-      setIsStreaming(false);
-      abortRef.current = null;
-    }
+      if (!conv) return;
 
-    // Title generation after first user msg
-    if (conv.title === "New chat" || !conv.title) {
-      try {
-        const t = await generateConversationTitle(text);
-        conv.title = t;
-      } catch {}
-    }
-    conv.updatedAt = Date.now();
-    await db.putConversation(conv);
-    await refreshConversations();
+      const existingMessages = await db.getMessages(conv.id);
+      const existingSummary = await db.getSummary(conv.id);
+      // Build the prompt before persisting the new user message so the current
+      // input is included exactly once.
+      const prompt = buildPrompt(settings, existingMessages, existingSummary, text);
 
-    // Auto-summary
-    const after = await db.getMessages(conv.id);
-    if (shouldSummarize(settings, after.length)) {
+      const userMsg: Message = {
+        id: uid(),
+        conversationId: conv.id,
+        role: "user",
+        content: text,
+        createdAt: Date.now(),
+        status: "complete",
+      };
+      await db.putMessage(userMsg);
+      setMessages((m) => [...m, userMsg]);
+
+      const assistantMsg: Message = {
+        id: uid(),
+        conversationId: conv.id,
+        role: "assistant",
+        content: "",
+        createdAt: Date.now() + 1,
+        status: "streaming",
+      };
+      await db.putMessage(assistantMsg);
+      setMessages((m) => [...m, assistantMsg]);
+
+      setIsStreaming(true);
+      abortRef.current = new AbortController();
+      let acc = "";
       try {
-        const text = after
-          .slice(0, Math.max(after.length - settings.maxRecentMessages, 0))
-          .map((m) => `${m.role}: ${m.content}`)
-          .join("\n");
-        if (text.trim()) {
-          const s = await summarizeConversation(text);
-          const cs: ConversationSummary = {
-            conversationId: conv.id,
-            summary: s.summary,
-            importantFacts: s.importantFacts,
-            openTasks: s.openTasks,
-            userPreferences: s.userPreferences,
-            updatedAt: Date.now(),
-          };
-          await db.putSummary(cs);
-          setSummary(cs);
+        const session = await ensureSession(conv);
+        for await (const chunk of streamMessage(session, prompt, abortRef.current.signal)) {
+          acc += chunk;
+          setMessages((m) => m.map((x) => (x.id === assistantMsg.id ? { ...x, content: acc } : x)));
         }
-      } catch {}
-    }
-  }, [activeId, ensureSession, newChat, refreshConversations, settings]);
+        assistantMsg.content = acc;
+        assistantMsg.status = "complete";
+        await db.putMessage(assistantMsg);
+        setMessages((m) => m.map((x) => (x.id === assistantMsg.id ? { ...assistantMsg } : x)));
+      } catch (e: any) {
+        const wasAborted = abortRef.current?.signal.aborted === true;
+        assistantMsg.content = acc;
+        assistantMsg.status = wasAborted ? "partial" : "error";
+        if (!wasAborted && !assistantMsg.content) {
+          assistantMsg.content = `Error: ${e?.message ?? e}`;
+        }
+        await db.putMessage(assistantMsg);
+        setMessages((m) => m.map((x) => (x.id === assistantMsg.id ? { ...assistantMsg } : x)));
+        if (wasAborted) {
+          // Abort can leave the local model session in an uncertain state, so
+          // we drop it and lazily recreate it for the next request.
+          destroySession(sessionRef.current);
+          sessionRef.current = null;
+          sessionConvRef.current = null;
+        } else {
+          setError(e?.message ?? String(e));
+        }
+      } finally {
+        setIsStreaming(false);
+        abortRef.current = null;
+      }
+
+      // Title generation after first user msg
+      if (conv.title === "New chat" || !conv.title) {
+        try {
+          const t = await generateConversationTitle(text);
+          conv.title = t;
+        } catch {
+          // Title generation is optional; keep the fallback title if it fails.
+        }
+      }
+      conv.updatedAt = Date.now();
+      await db.putConversation(conv);
+      await refreshConversations();
+
+      // Auto-summary
+      const after = await db.getMessages(conv.id);
+      if (shouldSummarize(settings, after.length)) {
+        try {
+          const text = after
+            .slice(0, Math.max(after.length - settings.maxRecentMessages, 0))
+            .map((m) => `${m.role}: ${m.content}`)
+            .join("\n");
+          if (text.trim()) {
+            const s = await summarizeConversation(text);
+            const cs: ConversationSummary = {
+              conversationId: conv.id,
+              summary: s.summary,
+              importantFacts: s.importantFacts,
+              openTasks: s.openTasks,
+              userPreferences: s.userPreferences,
+              updatedAt: Date.now(),
+            };
+            await db.putSummary(cs);
+            setSummary(cs);
+          }
+        } catch {
+          // Summary generation is best-effort and should not block chat flow.
+        }
+      }
+    },
+    [activeId, ensureSession, newChat, refreshConversations, settings],
+  );
 
   const regenerateLast = useCallback(async () => {
     if (!activeId) return;
@@ -275,17 +301,20 @@ export function useChat() {
     }
   }, [activeId, sendUserMessage]);
 
-  const editUserMessage = useCallback(async (id: string, newContent: string) => {
-    if (!activeId) return;
-    const msgs = await db.getMessages(activeId);
-    const idx = msgs.findIndex((m) => m.id === id);
-    if (idx === -1) return;
-    // delete this and everything after
-    for (let i = idx; i < msgs.length; i++) await db.deleteMessage(msgs[i].id);
-    const after = await db.getMessages(activeId);
-    setMessages(after);
-    await sendUserMessage(newContent);
-  }, [activeId, sendUserMessage]);
+  const editUserMessage = useCallback(
+    async (id: string, newContent: string) => {
+      if (!activeId) return;
+      const msgs = await db.getMessages(activeId);
+      const idx = msgs.findIndex((m) => m.id === id);
+      if (idx === -1) return;
+      // delete this and everything after
+      for (let i = idx; i < msgs.length; i++) await db.deleteMessage(msgs[i].id);
+      const after = await db.getMessages(activeId);
+      setMessages(after);
+      await sendUserMessage(newContent);
+    },
+    [activeId, sendUserMessage],
+  );
 
   return {
     settings,

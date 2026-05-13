@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Copy, Pencil, RefreshCw, User, Bot, X } from "lucide-react";
+import { Check, Copy, Pencil, RefreshCw, User, Bot } from "lucide-react";
 import type { Message } from "@/types/chat";
 import { Markdown } from "./Markdown";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,14 @@ export function MessageItem({ message, isLast, isStreaming, onEdit, onRegenerate
                 >
                   Save & resend
                 </Button>
-                <Button size="sm" variant="ghost" onClick={() => { setEditing(false); setDraft(message.content); }}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setEditing(false);
+                    setDraft(message.content);
+                  }}
+                >
                   Cancel
                 </Button>
               </div>
@@ -59,10 +66,15 @@ export function MessageItem({ message, isLast, isStreaming, onEdit, onRegenerate
               {message.content ? (
                 <Markdown content={message.content} />
               ) : (
-                isStreaming && <span className="inline-block h-4 w-2 animate-pulse bg-foreground/60" />
+                isStreaming && (
+                  <span className="inline-block h-4 w-2 animate-pulse bg-foreground/60" />
+                )
               )}
               {message.status === "error" && (
                 <p className="mt-2 text-xs text-destructive">Generation failed.</p>
+              )}
+              {message.status === "partial" && (
+                <p className="mt-2 text-xs text-muted-foreground">Stopped</p>
               )}
               <div className="mt-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button

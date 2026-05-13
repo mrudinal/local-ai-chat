@@ -73,18 +73,27 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Chrome GPT" },
-      { name: "description", content: "A frontend-only chatbot app that runs locally in your browser using Chrome's Built-in AI." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Chrome GPT" },
-      { property: "og:description", content: "A frontend-only chatbot app that runs locally in your browser using Chrome's Built-in AI." },
+      { title: "Chrome GPT Local Chat" },
+      {
+        name: "description",
+        content:
+          "A frontend-only chatbot app that runs locally in your browser using Chrome Built-in AI.",
+      },
+      { name: "author", content: "Max Antonio Rudin Alvarez" },
+      { property: "og:title", content: "Chrome GPT Local Chat" },
+      {
+        property: "og:description",
+        content:
+          "A frontend-only chatbot app that runs locally in your browser using Chrome Built-in AI.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Chrome GPT" },
-      { name: "twitter:description", content: "A frontend-only chatbot app that runs locally in your browser using Chrome's Built-in AI." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4afb8c12-0d65-4529-81b2-1a67139ee377/id-preview-37ce638b--7137439d-426e-4c1b-bb3f-bd3f269f5c8c.lovable.app-1778641948382.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/4afb8c12-0d65-4529-81b2-1a67139ee377/id-preview-37ce638b--7137439d-426e-4c1b-bb3f-bd3f269f5c8c.lovable.app-1778641948382.png" },
+      { name: "twitter:title", content: "Chrome GPT Local Chat" },
+      {
+        name: "twitter:description",
+        content:
+          "A frontend-only chatbot app that runs locally in your browser using Chrome Built-in AI.",
+      },
     ],
     links: [
       {

@@ -1,12 +1,12 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "chrome-gpt-local-chat",
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "packageManager": "pnpm@10.20.0",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write ."
@@ -41,6 +41,7 @@
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@tailwindcss/vite": "^4.2.1",
+    "@tanstack/query-core": "^5.100.10",
     "@tanstack/react-query": "^5.83.0",
     "@tanstack/react-router": "^1.168.25",
     "@tanstack/react-start": "^1.167.50",
