@@ -1,41 +1,95 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 
-export function InstructionsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+function ChromeLink({ href }: { href: string }) {
+  return (
+    <a
+      href={href}
+      onClick={(e) => {
+        e.preventDefault();
+        navigator.clipboard?.writeText(href);
+      }}
+      className="text-primary underline underline-offset-2 hover:text-primary/80 break-all font-mono text-[12px]"
+      title="Click to copy (browsers block navigating to chrome:// URLs)"
+    >
+      {href}
+    </a>
+  );
+}
+
+export function InstructionsDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>How this chatbot works</DialogTitle>
-          <DialogDescription>
-            Local ChatGPT-style chat powered by Chrome Built-in AI.
-          </DialogDescription>
+          <DialogTitle>How Chrome GPT works</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3 text-sm text-foreground/90 leading-relaxed">
-          <p>
-            This is a 100% local ChatGPT-style chatbot that runs entirely in your browser using
-            Chrome Built-in AI (Gemini Nano) through the <code>LanguageModel</code> API. No API key,
-            backend, or cloud AI is used.
-          </p>
-          <p>
-            To enable it, update Chrome at <code>chrome://settings/help</code>, enable the required
-            Chrome AI flags if prompted, and restart Chrome. The first time you use the app, Chrome
-            may download and prepare the local model automatically.
-          </p>
-          <p>
-            When selecting a Projects Folder in Settings, grant read and write permission so the app
-            can save chats and exports to that folder.
-          </p>
-          <p>
-            To verify everything is ready, open <code>chrome://on-device-internals</code> and use
-            Settings → Check Chrome GPT. The chatbot will work when the model status is ready
-            and the availability check returns <code>"available"</code>.
-          </p>
+
+        <div className="text-sm leading-6 space-y-4">
+          <section className="space-y-1">
+            <p>Chrome GPT runs 100% in your browser.</p>
+            <p>It uses Chrome Built-in AI.</p>
+            <p>
+              It uses Gemini Nano through the <code>LanguageModel</code> API.
+            </p>
+            <p>No backend is used.</p>
+            <p>No API key is needed.</p>
+            <p>No cloud AI is used.</p>
+          </section>
+
+          <section className="space-y-1">
+            <h4 className="font-semibold">Required Chrome version</h4>
+            <p>Use the latest Google Chrome version.</p>
+            <p>Check your version here:</p>
+            <ChromeLink href="chrome://settings/help" />
+          </section>
+
+          <section className="space-y-1">
+            <h4 className="font-semibold">Enable the required flag</h4>
+            <p>Open this page:</p>
+            <ChromeLink href="chrome://flags/" />
+            <p>Search for:</p>
+            <p className="font-mono text-[12px]">Prompt API for Gemini Nano</p>
+            <p>
+              Set it to: <span className="font-medium">Enabled</span>
+            </p>
+            <p>Restart Chrome.</p>
+          </section>
+
+          <section className="space-y-1">
+            <h4 className="font-semibold">Check the model status</h4>
+            <p>Open this page:</p>
+            <ChromeLink href="chrome://on-device-internals/" />
+            <p>Open the Model Status tab.</p>
+            <p>Wait until the local model is ready.</p>
+            <p>The first setup can take several minutes.</p>
+            <p>Chrome may need to download Gemini Nano.</p>
+          </section>
+
+          <section className="space-y-1">
+            <h4 className="font-semibold">Folder permission</h4>
+            <p>Choose a Projects Folder in Settings.</p>
+            <p>Allow read and write permission.</p>
+            <p>Chats will be saved there.</p>
+          </section>
+
+          <section className="space-y-1">
+            <h4 className="font-semibold">Final verification</h4>
+            <p>Open Settings.</p>
+            <p>Click Check Chrome GPT.</p>
+            <p>It is ready when availability returns:</p>
+            <p className="font-mono text-[12px]">available</p>
+          </section>
         </div>
       </DialogContent>
     </Dialog>
