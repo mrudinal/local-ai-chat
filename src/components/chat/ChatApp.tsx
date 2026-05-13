@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Menu, Settings as SettingsIcon, Info, Sparkles, Save, Pencil, Check, X } from "lucide-react";
+import { Menu, Settings as SettingsIcon, Info, Sparkles, Save, Pencil, Check, X, Download } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import { Sidebar } from "./Sidebar";
 import { MessageItem } from "./MessageItem";
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { db } from "@/services/db";
 import { hasFSAccess, saveCurrentChat, downloadBlob, chatToMarkdown } from "@/services/folder";
+import { exportAllChatsAsTxt } from "@/services/folder";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -68,6 +69,15 @@ export function ChatApp() {
       }
     } catch (e: any) {
       toast.error(`Save error: ${e?.message ?? e}`);
+    }
+  };
+
+  const onExportAllTxt = async () => {
+    try {
+      const count = await exportAllChatsAsTxt();
+      toast.success(`Exported ${count} chat${count === 1 ? "" : "s"} as .txt`);
+    } catch (e: any) {
+      toast.error(`Export error: ${e?.message ?? e}`);
     }
   };
 
@@ -153,6 +163,9 @@ export function ChatApp() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <Button variant="ghost" size="sm" onClick={onExportAllTxt}>
+              <Download className="h-4 w-4 mr-1" /> Export
+            </Button>
             <Button variant="ghost" size="sm" onClick={onSaveCurrentChat} disabled={!activeConv}>
               <Save className="h-4 w-4 mr-1" /> Save
             </Button>
@@ -231,9 +244,6 @@ export function ChatApp() {
         onOpenChange={setSettingsOpen}
         settings={chat.settings}
         onSave={chat.updateSettings}
-        activeConversation={activeConv}
-        activeMessages={chat.messages}
-        activeSummary={chat.summary}
         onClearAll={async () => {
           await db.clearAll();
           location.reload();
